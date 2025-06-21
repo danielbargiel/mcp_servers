@@ -7,8 +7,13 @@ services:
       # The server runs on port 8000 inside the container
       - "8000:8000"
     volumes:
-      # Mount your database file (read-only)
-      - /home/robcoy/Git/scp_o_l_x/database/properties.db:/database/properties.db:ro
+      # Mount the database file (read-only). The host path is set by the
+      # DB_HOST_PATH environment variable.
+      - ${DB_HOST_PATH}:/database/properties.db:ro
+
+      # Mount your database file (read-only) - PRODUCTION PATH
+      #- /home/robcoy/Git/scp_o_l_x/database/properties.db:/database/properties.db:ro
+
     environment:
       # Pass the database path to the application
       - DB_PATH=/database/properties.db

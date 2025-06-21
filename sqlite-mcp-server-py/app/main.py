@@ -1,5 +1,6 @@
 import os
 import asyncio
+import json
 from fastapi import FastAPI, Request
 from starlette.responses import StreamingResponse
 from mcp.server.fastmcp import FastMCP
@@ -33,7 +34,7 @@ async def execute_query(query: str) -> str:
             rows = await cursor.fetchall()
             columns = [description[0] for description in cursor.description]
             result = [dict(zip(columns, row)) for row in rows]
-            return str(result)
+            return json.dumps(result)
     except Exception as e:
         return f"Error executing query: {e}"
 
@@ -48,7 +49,7 @@ async def list_tables() -> str:
         async with aiosqlite.connect(DB_PATH) as db:
             cursor = await db.execute("SELECT name FROM sqlite_master WHERE type='table';")
             tables = [row[0] for row in await cursor.fetchall()]
-            return str(tables)
+            return json.dumps(tables)
     except Exception as e:
         return f"Error listing tables: {e}"
 
@@ -76,7 +77,7 @@ async def sse_endpoint(request: Request) -> StreamingResponse:
     return stream
 
 # This endpoint is where the client sends messages back to the server.
-@app.post(transport.post_path)
+@app.post("/messages/")
 async def post_message(request: Request):
     """The endpoint where the client posts messages to the server."""
     await transport.receive_post(request)
