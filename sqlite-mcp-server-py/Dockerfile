@@ -4,6 +4,8 @@ FROM python:3.11-slim
 # Set the working directory in the container
 WORKDIR /app
 
+RUN mkdir /database
+
 # Copy the dependency list and install them
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt

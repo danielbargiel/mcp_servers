@@ -1,18 +1,15 @@
 services:
-  sqlite-mcp-server-python:
-    container_name: sqlite_mcp_server_python
+  sqlite-mcp-server-py:
+    container_name: sqlite_mcp_server_py
     # Build the image from the Dockerfile in the current directory
     build: .
     ports:
       # The server runs on port 8000 inside the container
       - "8000:8000"
     volumes:
-      # Mount the database file (read-only). The host path is set by the
+      # Mount the database file. The host path is set by the
       # DB_HOST_PATH environment variable.
-      - ${DB_HOST_PATH}:/database/properties.db:ro
-
-      # Mount your database file (read-only) - PRODUCTION PATH
-      #- /home/robcoy/Git/scp_o_l_x/database/properties.db:/database/properties.db:ro
+      - ${DB_HOST_PATH}:/database/properties.db
 
     environment:
       # Pass the database path to the application

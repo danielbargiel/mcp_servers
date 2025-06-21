@@ -2,7 +2,7 @@ import os
 import asyncio
 import json
 from fastapi import FastAPI, Request
-from starlette.responses import StreamingResponse
+from starlette.responses import StreamingResponse, Response
 from mcp.server.fastmcp import FastMCP
 from mcp.server.sse import SseServerTransport
 import aiosqlite
@@ -67,21 +67,36 @@ app = FastAPI(title="Python MCP SQLite Server")
 # ######################################################################
 transport = SseServerTransport(endpoint="/messages/")
 
-# This is the main SSE endpoint that n8n will connect to.
+# This is the main SSE endpoint that the client will connect to.
 @app.get("/sse")
-async def sse_endpoint(request: Request) -> StreamingResponse:
+async def sse_endpoint(request: Request) -> Response:
     """The endpoint that establishes the SSE connection."""
-    stream = await transport.connect_sse(request)
-    # The MCP server runs over the connection provided by the transport.
-    asyncio.create_task(mcp.run(stream))
-    return stream
+    
+    # The mcp.server.sse library is designed to work with raw ASGI.
+    # We adapt the FastAPI request to what the library expects.
+    
+    # We need to create a compatible handler for the MCP server to run.
+    # This is an internal detail of the FastMCP server.
+    async def mcp_handler(streams):
+        # This is the run method from the low-level MCP server, not FastMCP.
+        await mcp._mcp_server.run(
+            streams[0],
+            streams[1],
+            mcp._mcp_server.create_initialization_options(),
+        )
 
-# This endpoint is where the client sends messages back to the server.
-@app.post("/messages/")
-async def post_message(request: Request):
-    """The endpoint where the client posts messages to the server."""
-    await transport.receive_post(request)
-    return {"status": "message received"}
+    async with transport.connect_sse(
+        request.scope, request.receive, request._send
+    ) as streams:
+        # The MCP server runs over the connection provided by the transport.
+        await mcp_handler(streams)
+
+    # The connection is closed, return an empty response.
+    return Response()
+
+# Mount the POST handler for receiving messages from the client.
+# FastAPI is built on Starlette, so we can access the underlying app.
+app.mount("/messages/", app=transport.handle_post_message)
 
 @app.get("/")
 def read_root():
