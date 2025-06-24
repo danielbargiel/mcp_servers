@@ -1,26 +1,32 @@
 services:
   sqlite-mcp-server-python:
     container_name: sqlite_mcp_server_python
-    # Build the image from the Dockerfile in the current directory
-    build: .
+    build:
+      context: .
+    # The .env file in this directory is used to load environment variables.
+    # Copy .env.example to .env and set your DB_HOST_PATH.
+    env_file:
+      - .env
     ports:
-      # The server runs on port 8000 inside the container
+      # Maps port 8000 on the host to port 8000 in the container.
       - "8000:8000"
     volumes:
-      # Mount the database file (read-only). The host path is set by the
-      # DB_HOST_PATH environment variable.
-      - ${DB_HOST_PATH}:/database/properties.db:ro
-
-      # Mount your database file (read-only) - PRODUCTION PATH
-      #- /home/robcoy/Git/scp_o_l_x/database/properties.db:/database/properties.db:ro
-
+      # Mounts the host database file into the container (read-only).
+      # DB_HOST_PATH is defined in the .env file.
+      # The application inside the container will access the DB at /database/app.db
+      - ${DB_HOST_PATH}:/database/app.db:ro
     environment:
-      # Pass the database path to the application
-      - DB_PATH=/database/properties.db
+      # This environment variable tells the application where to find the database inside the container.
+      - DB_PATH=/database/app.db
+      # Sets the log level. Options: DEBUG, INFO, WARNING, ERROR, CRITICAL
+      - LOG_LEVEL=DEBUG
     restart: unless-stopped
     networks:
       - services-network
 
 networks:
   services-network:
+    # This configuration assumes you have an external network called 'services-network'.
+    # If not, you can create it with 'docker network create services-network'
+    # or remove the 'external: true' line to have Docker Compose create it.
     external: true
