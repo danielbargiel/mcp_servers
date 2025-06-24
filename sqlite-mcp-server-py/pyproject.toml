@@ -1,0 +1,11 @@
+[project]
+name = "sqlite-mcp-server-py"
+version = "0.1.0"
+description = "SQLite MCP Server with SSE transport"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi",
+    "uvicorn[standard]",
+    "mcp",
+    "aiosqlite",
+]
